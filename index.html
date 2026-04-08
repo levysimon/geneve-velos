@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🚲 Vélos Genève — EDA Interactive</title>
+  <meta name="description" content="Analyse exploratoire interactive des mouvements de vélos en libre-service à Genève. Août 2025 – Mars 2026.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">🚲</div>
+    <ul class="nav-links">
+      <li><a href="#kpis">Chiffres clés</a></li>
+      <li><a href="#section-temporal">Temporel</a></li>
+      <li><a href="#section-map">Carte</a></li>
+      <li><a href="#section-fleet">Flotte</a></li>
+      <li><a href="#section-trips">Trajets</a></li>
+      <li><a href="#section-zones">Zones</a></li>
+      <li><a href="#section-weather">Météo</a></li>
+      <li><a href="#about">About</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-tag">Analyse Exploratoire de Données</div>
+    <h1>Mobilité cycliste<br>à <span style="color:var(--accent)">Genève</span></h1>
+    <p class="hero-desc">
+      Ce site présente une analyse exploratoire complète des données de vélos en libre-service du Canton de Genève sur la période août 2025 – mars 2026.
+      Les visualisations couvrent 321&nbsp;000 trajets reconstitués, 616 stations et 1&nbsp;849 vélos.
+      L'analyse inclut les patterns temporels, les flux géographiques, la détection de pendulaires et l'impact des conditions météorologiques.
+      <em>Il y a volontairement peu de texte ou d'explications.</em>
+    </p>
+    <div class="hero-meta">
+      <span><span class="dot"></span> Données pré-calculées</span>
+      <span>📅 Août 2025 → Mars 2026</span>
+      <span>📍 616 stations · Genève</span>
+    </div>
+  </div>
+</section>
+
+<!-- KPIs -->
+<section id="kpis">
+  <div class="container">
+    <div id="kpi-grid" class="kpi-grid"></div>
+  </div>
+</section>
+
+<!-- TEMPOREL -->
+<section id="section-temporal" class="section">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag">Analyse temporelle</div>
+      <h2>Évolution des trajets dans le temps</h2>
+      <p>Volume journalier avec moyenne mobile 7 jours. Les zones violettes indiquent les vacances scolaires genevoises.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card fade-in" style="grid-column:span 2">
+        <div class="card-title">Trajets quotidiens — classique vs e-bike</div>
+        <div class="legend" style="margin-bottom:16px">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--bike)"></span>Classique</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--ebike)"></span>E-bike</span>
+          <span class="legend-item"><span class="legend-line" style="background:var(--yellow)"></span>Moy. mobile 7j</span>
+          <span class="legend-item" style="gap:6px"><span style="display:inline-block;width:10px;height:10px;background:rgba(156,111,228,.25);border-radius:2px"></span>Vacances scolaires</span>
+        </div>
+        <svg id="daily-svg" style="width:100%;display:block"></svg>
+      </div>
+      <div class="card fade-in">
+        <div class="card-title">Intensité Jour × Heure</div>
+        <svg id="heatmap-svg" style="width:100%;display:block"></svg>
+      </div>
+      <div class="card fade-in">
+        <div class="card-title">Profil horaire des départs</div>
+        <div class="controls">
+          <button class="btn active" id="btn-weekday">Semaine</button>
+          <button class="btn" id="btn-weekend">Week-end</button>
+        </div>
+        <div class="legend" style="margin-bottom:12px">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--bike)"></span>Classique</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--ebike)"></span>E-bike</span>
+        </div>
+        <svg id="hourly-svg" style="width:100%;display:block"></svg>
+      </div>
+      <div class="card fade-in" style="grid-column:span 2">
+        <div class="card-title">Tendance mensuelle</div>
+        <svg id="monthly-svg" style="width:100%;display:block"></svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CARTE -->
+<section id="section-map" class="section">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag">Analyse spatiale</div>
+      <h2>Carte interactive des stations</h2>
+      <p>616 stations colorées par volume d'activité. On peut ajouter les 25 trajets les plus fréquents.</p>
+    </div>
+    <div class="card fade-in">
+      <div class="controls" style="margin-bottom:16px">
+        <button class="btn active" id="btn-show-stations">📍 Stations</button>
+        <button class="btn" id="btn-show-od">🔀 Top 25 trajets</button>
+      </div>
+      <div id="map-container"></div>
+    </div>
+    <div class="grid-2" style="margin-top:20px">
+      <div class="card fade-in">
+        <div class="card-title">Top 20 stations — les plus actives</div>
+        <div id="top-hubs-active" style="margin-top:8px"></div>
+      </div>
+      <div class="card fade-in">
+        <div class="card-title">Les 15 trajets les plus fréquents</div>
+        <div id="top-od-bars"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FLOTTE -->
+<section id="section-fleet" class="section">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag">Flotte &amp; préférence</div>
+      <h2>Vélos classiques vs E-bikes</h2>
+    </div>
+    <div class="grid-3">
+      <div class="card fade-in" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px;padding:32px">
+        <div style="text-align:center">
+          <div style="font-size:2.8rem;font-weight:800;color:var(--text);font-family:var(--mono)">860</div>
+          <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:4px">Vélos classiques</div>
+        </div>
+        <div style="width:1px;height:40px;background:var(--border)"></div>
+        <div style="text-align:center">
+          <div style="font-size:2.8rem;font-weight:800;color:var(--ebike);font-family:var(--mono)">989</div>
+          <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:4px">E-bikes</div>
+        </div>
+        <div style="font-size:.8rem;color:var(--muted);text-align:center">53% de la flotte est électrique</div>
+      </div>
+      <div class="card fade-in" style="grid-column:span 2">
+        <div style="display:flex;align-items:center;gap:24px;margin-bottom:20px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px">Préférence e-bike quand disponible</div>
+            <div id="pct-ebike-val" style="font-size:2.5rem;font-weight:800;color:var(--ebike);font-family:var(--mono)">—</div>
+          </div>
+        </div>
+        <div class="card-title">% e-bike choisi par heure de départ</div>
+        <svg id="ebike-pref-svg" style="width:100%;display:block"></svg>
+      </div>
+      <div class="card fade-in" style="grid-column:span 3">
+        <div class="card-title">Distribution des durées — Trajets points à points filtrés (≤90 min)</div>
+        <div class="legend" style="margin-bottom:12px">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--bike)"></span>Classique</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--ebike)"></span>E-bike</span>
+          <span class="legend-item"><span class="legend-line" style="background:rgba(255,255,255,.5)"></span>Médiane</span>
+        </div>
+        <svg id="duration-svg" style="width:100%;display:block"></svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRAJETS -->
+<section id="section-trips" class="section">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag">Analyse des trajets</div>
+      <h2>Matrice des flux les plus fréquents</h2>
+      <p>La diagonale violette représente les boucles (départ = arrivée). Les cases bleues montrent les trajets entre stations.</p>
+    </div>
+    <div class="card fade-in">
+      <div class="card-title">Top 10 stations — flux croisés</div>
+      <div class="chart-wrap" style="overflow-x:auto">
+        <svg id="odmatrix-svg" style="width:100%;min-width:460px;display:block"></svg>
+      </div>
+      <div class="legend" style="margin-top:12px">
+        <span class="legend-item"><span class="legend-dot" style="background:rgba(156,111,228,.5)"></span>Boucle</span>
+        <span class="legend-item"><span class="legend-dot" style="background:rgba(79,156,249,.5)"></span>Trajet entre stations</span>
+      </div>
+    </div>
+
+    <!-- Boucles -->
+    <div class="section-header fade-in" style="margin-top:60px;margin-bottom:28px">
+      <div class="section-tag">Trajets boucles</div>
+      <h2>Départ et arrivée à la même station</h2>
+    </div>
+    <div class="grid-2">
+      <div class="card fade-in">
+        <div class="card-title">Top 20 stations — nombre de boucles (avec durée médiane)</div>
+        <div id="top-loops-bars" style="margin-top:4px"></div>
+      </div>
+      <div class="card fade-in">
+        <div class="card-title">Concentration géographique des boucles</div>
+        <svg id="loops-map-svg" style="width:100%;display:block"></svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ZONES -->
+<section id="section-zones" class="section">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag">Géographie &amp; Zones</div>
+      <h2>Centre-ville ↔ Périphérie</h2>
+      <p>Stations classifiées par distance au Pont du Mont-Blanc.</p>
+    </div>
+    <div class="card fade-in">
+      <div class="card-title">Matrice des trajets inter-zones</div>
+      <div id="zone-flow-table" style="overflow-x:auto;margin-top:8px"></div>
+      <div style="margin-top:16px;font-size:.78rem;color:var(--muted);line-height:1.9">
+        <strong style="color:var(--text)">Centre (&lt;1.5 km)</strong> — 333 stations &nbsp;|&nbsp;
+        <strong style="color:var(--text)">Proche (1.5–3 km)</strong> — 205 stations &nbsp;|&nbsp;
+        <strong style="color:var(--text)">Périphérie (&gt;3 km)</strong> — 78 stations
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MÉTÉO -->
+<section id="section-weather" class="section">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag">Météo &amp; Cyclisme</div>
+      <h2>Impact de la température sur le nombre de trajets</h2>
+    </div>
+    <div class="grid-2">
+      <div class="card fade-in">
+        <div class="card-title">Température journalière vs Nombre de trajets</div>
+        <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Corrélation de Pearson</div>
+            <div id="r-temp-val" style="font-size:2.2rem;font-weight:800;color:var(--green);font-family:var(--mono)">—</div>
+          </div>
+          <div style="font-size:.8rem;color:var(--muted)">
+            Chaque +1°C est associé à ~<span id="slope-temp" style="color:var(--text);font-weight:700">—</span> trajets / jour supplémentaires.
+          </div>
+        </div>
+        <svg id="scatter-temp-svg" style="width:100%;display:block"></svg>
+        <div class="legend" style="margin-top:12px">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--yellow)"></span>Jour sec</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--bike)"></span>Jour pluvieux (&gt;1mm)</span>
+          <span class="legend-item"><span class="legend-line" style="background:var(--green)"></span>Régression linéaire</span>
+        </div>
+      </div>
+      <div class="card fade-in">
+        <div class="card-title">Distribution des vitesses estimées</div>
+        <div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+          <div style="text-align:center;padding:18px 24px;background:rgba(79,156,249,.07);border-radius:10px;border:1px solid rgba(79,156,249,.15);flex:1">
+            <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px">Classique</div>
+            <div id="spd-bike-val" style="font-size:2rem;font-weight:800;color:var(--bike);font-family:var(--mono)">—</div>
+            <div style="font-size:.7rem;color:var(--muted);margin-top:3px">vitesse moyenne</div>
+          </div>
+          <div style="text-align:center;padding:18px 24px;background:rgba(230,67,26,.07);border-radius:10px;border:1px solid rgba(230,67,26,.15);flex:1">
+            <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px">E-bike</div>
+            <div id="spd-ebike-val" style="font-size:2rem;font-weight:800;color:var(--ebike);font-family:var(--mono)">—</div>
+            <div style="font-size:.7rem;color:var(--muted);margin-top:3px">vitesse moyenne</div>
+          </div>
+        </div>
+        <svg id="speed-svg" style="width:100%;display:block"></svg>
+        <div class="legend" style="margin-top:10px">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--bike)"></span>Classique</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--ebike)"></span>E-bike</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="section">
+  <div class="container">
+    <div style="max-width:800px;margin:0 auto;text-align:center">
+      <div class="section-tag" style="display:inline-block;margin-bottom:16px">À propos</div>
+      <h2 style="margin-bottom:32px">Projet d'analyse de mobilité urbaine</h2>
+      <div id="kpi-about-grid" class="kpi-about-grid" style="margin-bottom:40px"></div>
+      <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:40px">
+        <div class="card" style="padding:20px 28px;text-align:left;min-width:180px">
+          <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Stack technique</div>
+          <div style="font-size:.85rem;color:var(--text);line-height:2.1">Python · pandas · numpy<br>D3.js v7 · Leaflet.js<br>GitHub Pages</div>
+        </div>
+        <div class="card" style="padding:20px 28px;text-align:left;min-width:180px">
+          <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Données</div>
+          <div style="font-size:.85rem;color:var(--text);line-height:2.1">321&nbsp;000 trajets<br>616 stations actives<br>Août 2025 → Mars 2026</div>
+        </div>
+      </div>
+      <div class="card" style="padding:28px;display:inline-block;min-width:300px">
+        <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:16px">Contact</div>
+        <div id="contact-wrap">
+          <button id="reveal-email-btn" class="btn"
+                  style="padding:12px 28px;font-size:.9rem;border-color:rgba(79,156,249,.3);color:var(--accent)">
+            ✉️ Afficher l'adresse mail
+          </button>
+          <div id="email-display" style="display:none;margin-top:14px">
+            <a id="email-link" href="#"
+               style="font-size:1rem;font-weight:700;color:var(--accent);letter-spacing:.01em;
+                      display:inline-flex;align-items:center;gap:10px;text-decoration:none;
+                      padding:11px 22px;background:rgba(79,156,249,.08);border-radius:8px;
+                      border:1px solid rgba(79,156,249,.2)">
+            </a>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:8px">Cliquez pour ouvrir votre client mail</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <p>🚲 Genève Vélos EDA — août 2025 – mars 2026 · 321&nbsp;000 trajets · 616 stations</p>
+    <p style="margin-top:6px">D3.js + Leaflet · GitHub Pages</p>
+  </div>
+</footer>
+
+<div id="tooltip"></div>
+
+<script>
+/* tabs */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const t = tab.dataset.tab;
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x===tab));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id==='tab-'+t));
+  });
+});
+
+/* anti-spam email */
+(function(){
+  const p=['simon','levy','2002','@','gmail','.','com'];
+  document.getElementById('reveal-email-btn').addEventListener('click',function(){
+    const addr=p.join('');
+    const lnk=document.getElementById('email-link');
+    lnk.href='mailto:'+addr; lnk.textContent='✉️ '+addr;
+    document.getElementById('email-display').style.display='block';
+    this.style.display='none';
+  });
+})();
+
+function fmtApostrophe(n){
+  return Math.round(+n).toLocaleString('fr-CH').replace(/[\s\u00a0]/g,'\u2019');
+}
+
+/* top hubs bars */
+async function renderTopHubs(){
+  const stations=await fetch('data/stations.json').then(r=>r.json());
+  const maxN=Math.max(...stations.map(s=>s.total));
+  document.getElementById('top-hubs-active').innerHTML=
+    [...stations].sort((a,b)=>b.total-a.total).slice(0,20).map(s=>`
+    <div class="bar-row" title="${s.name||''}">
+      <div class="bar-label">${(s.name||'').slice(0,22)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${s.total/maxN*100}%;background:linear-gradient(90deg,var(--bike),var(--accent))"></div></div>
+      <div class="bar-val">${fmtApostrophe(s.total)}</div>
+    </div>`).join('');
+}
+
+/* KPI about grid */
+async function renderAboutKPIs(){
+  const d=await fetch('data/kpis.json').then(r=>r.json());
+  const rows=[
+    {val:fmtApostrophe(d.n_trips),          label:'Trajets reconstitués',            sub:fmtApostrophe(Math.round(d.trips_per_day))+' / jour'},
+    {val:fmtApostrophe(860+989),             label:'Vélos en flotte',                sub:'860 classiques · 989 e-bikes'},
+    {val:d.n_stations,                       label:'Stations actives',               sub:'sur 616 recensées'},
+    {val:fmtApostrophe(d.km_total)+' km',   label:'km estimés (trajets)',           sub:fmtApostrophe(Math.round(d.km_total/d.n_days))+' km / jour'},
+    {val:fmtApostrophe(d.km_bike)+' km',    label:'km — Classique',                 sub:fmtApostrophe(Math.round(d.km_bike/d.n_days))+' km / jour'},
+    {val:fmtApostrophe(d.km_ebike)+' km',   label:'km — E-bike',                    sub:fmtApostrophe(Math.round(d.km_ebike/d.n_days))+' km / jour'},
+    {val:d.dist_med+' km',                  label:'Distance médiane / trajet',       sub:'classique '+d.dist_med_bike+' km · e-bike '+d.dist_med_ebike+' km'},
+    {val:d.speed_bike+' / '+d.speed_ebike+' km/h', label:'Vitesse moy. classique / e-bike', sub:'+2 km/h pour l\'e-bike'},
+    {val:d.pct_ebike_pref+'%',              label:'Choix e-bike si disponible',     sub:'préférence usager'},
+    {val:d.pct_loops+'%',                   label:'Trajets boucles',                sub:fmtApostrophe(d.n_loops)+' trajets'},
+    {val:d.med_dur+' min',                  label:'Durée médiane (trajet)',          sub:'boucles '+d.med_dur_loops+' min'},
+    {val:'+'+d.r_temp,                      label:'Corrélation temp. vs trajets',   sub:'r de Pearson'},
+  ];
+  document.getElementById('kpi-about-grid').innerHTML=rows.map(r=>`
+    <div class="kpi-about-card">
+      <div class="kpi-about-val">${r.val}</div>
+      <div class="kpi-label">${r.label}</div>
+      <div class="kpi-sub">${r.sub}</div>
+    </div>`).join('');
+}
+
+document.addEventListener('DOMContentLoaded',()=>{renderTopHubs();renderAboutKPIs();});
+</script>
+<script src="js/main.js"></script>
+</body>
+</html>
