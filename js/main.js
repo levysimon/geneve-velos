@@ -220,6 +220,30 @@ async function renderMonthly() {
 }
 
 /* ── MAP ───────────────────────────────────────────────────── */
+/* ── MAP (CARTE PRINCIPALE) ────────────────────────────────── */
+async function renderMap() {
+  // 1. Initialiser la carte principale
+  const map = L.map('map-container').setView([46.2044, 6.1432], 13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd' }).addTo(map);
+
+  // 2. Créer les calques (tu devras ajouter ta logique de chargement de données ici)
+  const stationLayer = L.layerGroup().addTo(map);
+  const odLayer = L.layerGroup(); 
+
+  // 3. Boutons d'interaction
+  document.getElementById('btn-show-stations').addEventListener('click', function() {
+    this.classList.toggle('active');
+    if(this.classList.contains('active')) stationLayer.addTo(map); 
+    else map.removeLayer(stationLayer);
+  });
+  
+  document.getElementById('btn-show-od').addEventListener('click', function() {
+    this.classList.toggle('active');
+    if(this.classList.contains('active')) odLayer.addTo(map); 
+    else map.removeLayer(odLayer);
+  });
+}
+
 /* ── LOOPS MAP (LEAFLET VERSION) ─────────────────────────── */
 async function renderLoopsMap() {
   const [data, topLoops] = await Promise.all([load('loops_spatial'), load('top_loops')]);
@@ -235,8 +259,7 @@ async function renderLoopsMap() {
 
   // 2. Initialisation de la carte Leaflet
   // Note : utilise 'loops-map-container' comme ID (voir étape HTML plus bas)
-  const map = L.map('loops-map-container', { zoomControl: true, attributionControl: false }).setView([46.2044, 6.1432], 13);
-  
+  const map = L.map('loops-map-container', { zoomControl: true, attributionControl: false }).setView([46.2044, 6.1432], 13);  
   // Fond de carte sombre identique à ta première carte
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd' }).addTo(map);
 
@@ -401,59 +424,6 @@ async function renderODMatrix() {
   });
 }
 
-/* ── LOOPS MAP ─────────────────────────────────────────────── */
-async function renderLoopsMap() {
-  const data = await load('loops_spatial');
-  const topLoops = await load('top_loops');
-
-  // Top loops bar chart
-  const maxN = topLoops[0].n;
-  document.getElementById('top-loops-bars').innerHTML = topLoops.map(d=>`
-    <div class="bar-row" title="${d.name}">
-      <div class="bar-label">${shortName(d.name,22)}</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${d.n/maxN*100}%;background:${C.purple}"></div></div>
-      <div class="bar-val" style="font-size:.72rem;color:var(--muted)">${fmtN(d.n)} <span style="color:${C.muted};">(${d.dur_med}m)</span></div>
-    </div>`).join('');
-
-  // Scatter map with purple circles
-  const W=svgW('#loops-map-svg'), H=Math.round(W*0.7);
-  d3.select('#loops-map-svg').attr('viewBox',`0 0 ${W} ${H}`);
-
-  const lats = data.map(d=>d.latitude).filter(Boolean);
-  const lons = data.map(d=>d.longitude).filter(Boolean);
-  const latExt = d3.extent(lats), lonExt = d3.extent(lons);
-  const pad = 20;
-
-  const xS = d3.scaleLinear().domain(lonExt).range([pad, W-pad]);
-  const yS = d3.scaleLinear().domain(latExt).range([H-pad, pad]);
-
-  const maxLoops = d3.max(data,d=>d.n_loops);
-  const rScale = d3.scaleSqrt().domain([0,maxLoops]).range([2,22]);
-  const colorScale = d3.scaleSequential(t=>d3.interpolatePurples(.15+t*.8)).domain([0,maxLoops]);
-
-  const svg = d3.select('#loops-map-svg');
-  svg.selectAll('*').remove();
-
-  // Background
-  svg.append('rect').attr('width',W).attr('height',H).attr('fill','var(--bg-card)').attr('rx',8);
-
-  svg.selectAll('circle').data(data.filter(d=>d.latitude)).join('circle')
-    .attr('cx',d=>xS(d.longitude)).attr('cy',d=>yS(d.latitude))
-    .attr('r',d=>rScale(d.n_loops)).attr('fill',d=>colorScale(d.n_loops)).attr('fill-opacity',.75)
-    .attr('stroke','rgba(156,111,228,.3)').attr('stroke-width',.5)
-    .on('mouseover',(e,d)=>{
-      if(d.n_loops>0) showTip(`<div class="tt-label">${d.name}</div><div class="tt-row"><span>Boucles</span><span class="tt-val">${fmtN(d.n_loops)}</span></div>`,e);
-    })
-    .on('mouseleave',hideTip);
-
-  // Annotate top 5
-  data.sort((a,b)=>b.n_loops-a.n_loops).slice(0,5).forEach(d=>{
-    if(!d.latitude) return;
-    svg.append('text').attr('x',xS(d.longitude)+rScale(d.n_loops)+3).attr('y',yS(d.latitude))
-      .attr('dominant-baseline','middle').attr('fill','rgba(255,255,255,.7)')
-      .attr('font-size',9).text(shortName(d.name,18));
-  });
-}
 
 /* ── ZONE FLOW ─────────────────────────────────────────────── */
 async function renderZoneFlow() {
