@@ -204,10 +204,22 @@
       <div class="card fade-in">
         <div class="card-title">Concentration géographique des boucles</div>
         <div id="loops-map-container" style="height: 450px; width: 100%;"></div>   
-      <div class="card fade-in">
+      </div> <div class="card fade-in">
         <div class="card-title">Top stations (Boucles)</div>
         <div id="top-loops-bars" style="margin-top:10px"></div>
       </div>
+    </div>
+  </div>
+</section>
+
+<section id="section-zones" class="section">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag">Flux</div>
+      <h2>Matrice des zones</h2>
+    </div>
+    <div class="card fade-in">
+      <div id="zone-flow-table"></div>
     </div>
   </div>
 </section>
@@ -242,22 +254,23 @@
 
 <!-- ABOUT -->
 <section id="about" class="section">
-      <div class="card" style="padding:28px;display:inline-block;min-width:300px">
-        <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:16px">Contact</div>
-        <div id="contact-wrap">
-          <button id="reveal-email-btn" class="btn"
-                  style="padding:12px 28px;font-size:.9rem;border-color:rgba(79,156,249,.3);color:var(--accent)">
-            ✉️ Afficher l'adresse mail
-          </button>
-          <div id="email-display" style="display:none;margin-top:14px">
-            <a id="email-link" href="#"
-               style="font-size:1rem;font-weight:700;color:var(--accent);letter-spacing:.01em;
-                      display:inline-flex;align-items:center;gap:10px;text-decoration:none;
-                      padding:11px 22px;background:rgba(79,156,249,.08);border-radius:8px;
-                      border:1px solid rgba(79,156,249,.2)">
-            </a>
-            <div style="font-size:.72rem;color:var(--muted);margin-top:8px">Cliquez pour ouvrir votre client mail</div>
-          </div>
+  <div class="container"> <div id="kpi-about-grid" class="grid-3" style="margin-bottom:30px"></div>
+
+    <div class="card" style="padding:28px;display:inline-block;min-width:300px">
+      <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:16px">Contact</div>
+      <div id="contact-wrap">
+        <button id="reveal-email-btn" class="btn"
+                style="padding:12px 28px;font-size:.9rem;border-color:rgba(79,156,249,.3);color:var(--accent)">
+          ✉️ Afficher l'adresse mail
+        </button>
+        <div id="email-display" style="display:none;margin-top:14px">
+          <a id="email-link" href="#"
+             style="font-size:1rem;font-weight:700;color:var(--accent);letter-spacing:.01em;
+                    display:inline-flex;align-items:center;gap:10px;text-decoration:none;
+                    padding:11px 22px;background:rgba(79,156,249,.08);border-radius:8px;
+                    border:1px solid rgba(79,156,249,.2)">
+          </a>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:8px">Cliquez pour ouvrir votre client mail</div>
         </div>
       </div>
     </div>
@@ -314,30 +327,7 @@ async function renderTopHubs(){
     </div>`).join('');
 }
 
-/* KPI about grid */
-async function renderAboutKPIs(){
-  const d=await fetch('data/kpis.json').then(r=>r.json());
-  const rows=[
-    {val:fmtApostrophe(d.n_trips),          label:'Trajets reconstitués',            sub:fmtApostrophe(Math.round(d.trips_per_day))+' / jour'},
-    {val:fmtApostrophe(860+989),             label:'Vélos en flotte',                sub:'860 classiques · 989 e-bikes'},
-    {val:d.n_stations,                       label:'Stations actives',               sub:'sur 616 recensées'},
-    {val:fmtApostrophe(d.km_total)+' km',   label:'km estimés (trajets)',           sub:fmtApostrophe(Math.round(d.km_total/d.n_days))+' km / jour'},
-    {val:fmtApostrophe(d.km_bike)+' km',    label:'km — Classique',                 sub:fmtApostrophe(Math.round(d.km_bike/d.n_days))+' km / jour'},
-    {val:fmtApostrophe(d.km_ebike)+' km',   label:'km — E-bike',                    sub:fmtApostrophe(Math.round(d.km_ebike/d.n_days))+' km / jour'},
-    {val:d.dist_med+' km',                  label:'Distance médiane / trajet',       sub:'classique '+d.dist_med_bike+' km · e-bike '+d.dist_med_ebike+' km'},
-    {val:d.speed_bike+' / '+d.speed_ebike+' km/h', label:'Vitesse moy. classique / e-bike', sub:'+2 km/h pour l\'e-bike'},
-    {val:d.pct_ebike_pref+'%',              label:'Choix e-bike si disponible',     sub:'préférence usager'},
-    {val:d.pct_loops+'%',                   label:'Trajets boucles',                sub:fmtApostrophe(d.n_loops)+' trajets'},
-    {val:d.med_dur+' min',                  label:'Durée médiane (trajet)',          sub:'boucles '+d.med_dur_loops+' min'},
-    {val:'+'+d.r_temp,                      label:'Corrélation temp. vs trajets',   sub:'r de Pearson'},
-  ];
-  document.getElementById('kpi-about-grid').innerHTML=rows.map(r=>`
-    <div class="kpi-about-card">
-      <div class="kpi-about-val">${r.val}</div>
-      <div class="kpi-label">${r.label}</div>
-      <div class="kpi-sub">${r.sub}</div>
-    </div>`).join('');
-}
+
 
 document.addEventListener('DOMContentLoaded',()=>{renderTopHubs();renderAboutKPIs();});
 </script>
