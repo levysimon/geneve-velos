@@ -41,7 +41,7 @@
       Ce site présente une analyse exploratoire complète des données de vélos en libre-service du Canton de Genève sur la période août 2025 – mars 2026.
       Les visualisations couvrent 321&nbsp;000 trajets reconstitués, 616 stations et 1&nbsp;849 vélos.
       L'analyse inclut les patterns temporels, les flux géographiques, la détection de pendulaires et l'impact des conditions météorologiques.
-      <em>Il y a volontairement peu de texte ou d'explications.</em>
+      <em>Il y a volontairement peu de texte. Je vous laisse l'interprétation.</em> Si vous voulez me contacter, j'ai laissé une adresse en bas.
     </p>
     <div class="hero-meta">
       <span><span class="dot"></span> Données pré-calculées</span>
@@ -188,6 +188,26 @@
           <span class="legend-item"><span class="legend-dot" style="background:var(--bike)"></span>Classique</span>
           <span class="legend-item"><span class="legend-dot" style="background:var(--ebike)"></span>E-bike</span>
         </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="section-trips" class="section">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag">Analyse des boucles</div>
+      <h2>Trajets avec départ = arrivée</h2>
+      <p>Concentration géographique des trajets circulaires et stations les plus concernées.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card fade-in">
+        <div class="card-title">Concentration géographique des boucles</div>
+        <div id="loops-map-container" style="width:100%; height:450px; border-radius:12px; background:var(--bg-card);"></div>
+      </div>
+      <div class="card fade-in">
+        <div class="card-title">Top stations (Boucles)</div>
+        <div id="top-loops-bars" style="margin-top:10px"></div>
       </div>
     </div>
   </div>
