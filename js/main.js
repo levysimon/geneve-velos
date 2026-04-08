@@ -220,42 +220,52 @@ async function renderMonthly() {
 }
 
 /* ── MAP ───────────────────────────────────────────────────── */
-async function renderMap() {
-  const [stations, od_data] = await Promise.all([load('stations'), load('top_od')]);
+/* ── LOOPS MAP (LEAFLET VERSION) ─────────────────────────── */
+async function renderLoopsMap() {
+  const [data, topLoops] = await Promise.all([load('loops_spatial'), load('top_loops')]);
 
-  const map = L.map('map-container',{zoomControl:true,attributionControl:false}).setView([46.2044,6.1432],13);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(map);
+  // 1. Remplissage de la liste Top 20 (Barres)
+  const maxN = topLoops[0].n;
+  document.getElementById('top-loops-bars').innerHTML = topLoops.map(d => `
+    <div class="bar-row" title="${d.name}">
+      <div class="bar-label">${shortName(d.name, 22)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${d.n / maxN * 100}%;background:${C.purple}"></div></div>
+      <div class="bar-val" style="font-size:.72rem;color:var(--muted)">${fmtN(d.n)} <span style="color:${C.muted};">(${d.dur_med}m)</span></div>
+    </div>`).join('');
 
-  const maxDep = d3.max(stations,d=>d.n_dep);
-  const rScale = d3.scaleSqrt().domain([0,maxDep]).range([4,22]);
-  const colorScale = d3.scaleSequential(t=>d3.interpolateYlOrRd(t)).domain([0,maxDep]);
+  // 2. Initialisation de la carte Leaflet
+  // Note : utilise 'loops-map-container' comme ID (voir étape HTML plus bas)
+  const map = L.map('loops-map-container', { zoomControl: true, attributionControl: false }).setView([46.2044, 6.1432], 13);
+  
+  // Fond de carte sombre identique à ta première carte
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd' }).addTo(map);
 
-  const stationLayer = L.layerGroup().addTo(map);
-  const odLayer = L.layerGroup();
+  const maxLoops = d3.max(data, d => d.n_loops);
+  const rScale = d3.scaleSqrt().domain([0, maxLoops]).range([4, 22]);
+  
+  // Échelle de couleur violette pour les boucles
+  const colorScale = d3.scaleSequential(t => d3.interpolatePurples(0.2 + t * 0.8)).domain([0, maxLoops]);
 
-  stations.forEach(s=>{
-    if(!s.latitude) return;
-    const marker = L.circleMarker([s.latitude,s.longitude],{
-      radius:rScale(s.n_dep), fillColor:colorScale(s.n_dep),
-      color:'rgba(0,0,0,.3)', weight:1, fillOpacity:.5
-    }).addTo(stationLayer);
-    marker.on('mouseover',e=>showTip(`<div class="tt-label">${s.name}</div>
-      <div class="tt-row"><span>Départs</span><span class="tt-val">${fmtN(s.n_dep)}</span></div>
-      <div class="tt-row"><span>Arrivées</span><span class="tt-val">${fmtN(s.n_arr)}</span></div>
-      <div class="tt-row"><span>Zone</span><span class="tt-val">${s.zone}</span></div>`,e.originalEvent));
-    marker.on('mouseout',hideTip);
+  data.forEach(d => {
+    if (!d.latitude || d.n_loops === 0) return;
+
+    const marker = L.circleMarker([d.latitude, d.longitude], {
+      radius: rScale(d.n_loops),
+      fillColor: colorScale(d.n_loops),
+      color: 'rgba(255,255,255,0.2)', // Bordure fine blanche
+      weight: 1,
+      fillOpacity: 0.7
+    }).addTo(map);
+
+    // Tooltip identique à ton système actuel
+    marker.on('mouseover', e => showTip(`
+      <div class="tt-label">${d.name}</div>
+      <div class="tt-row"><span>Boucles</span><span class="tt-val">${fmtN(d.n_loops)}</span></div>
+      <div class="tt-row"><span>Durée méd.</span><span class="tt-val">${d.dur_med || '?'} min</span></div>`, e.originalEvent));
+    
+    marker.on('mouseout', hideTip);
   });
-
-  // OD arcs (top 25 trajets)
-  const odMax = d3.max(od_data,d=>d.n);
-  od_data.slice(0,25).forEach(od=>{
-    const lw = 0.5+(od.n/odMax)*3.5;
-    const line = L.polyline([[od.dep_lat,od.dep_lon],[od.arr_lat,od.arr_lon]],{color:C.bike,weight:lw,opacity:.55}).addTo(odLayer);
-    line.on('mouseover',e=>showTip(`<div class="tt-label">${od.dep} → ${od.arr}</div>
-      <div class="tt-row"><span>Trajets</span><span class="tt-val">${fmtN(od.n)}</span></div>
-      <div class="tt-row"><span>Durée méd.</span><span class="tt-val">${od.dur_med} min</span></div>`,e.originalEvent));
-    line.on('mouseout',hideTip);
-  });
+}
 
   document.getElementById('btn-show-stations').addEventListener('click',function(){
     this.classList.toggle('active');
@@ -265,7 +275,7 @@ async function renderMap() {
     this.classList.toggle('active');
     if(this.classList.contains('active')) odLayer.addTo(map); else map.removeLayer(odLayer);
   });
-}
+
 
 /* ── TOP OD BARS ───────────────────────────────────────────── */
 async function renderTopOD() {
